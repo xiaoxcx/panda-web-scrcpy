@@ -1,6 +1,5 @@
 # web-scrcpy
-
-![Project Logo](desc/image.png)
+![Project Logo](src/assets/high-qa.png)
 
 ## 项目简介
 web-scrcpy 是一个基于Web的远程控制工具，允许用户通过浏览器控制和查看Android设备的屏幕。
@@ -31,7 +30,7 @@ web-scrcpy 继承了scrcpy的优点，提供了高性能、低延迟的屏幕镜
 本项目使用 [MIT 许可证](LICENSE)。
 
 ## 项目截图
-![High Quality Screenshot](src/assets/high-qa.png)
+![High Quality Screenshot](desc/image.png)
 
 ## Git标签
 我们使用Git标签来管理项目的版本。你可以通过以下命令查看所有标签：
