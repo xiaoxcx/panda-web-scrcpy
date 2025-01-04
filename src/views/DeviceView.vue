@@ -11,22 +11,6 @@ import VideoContainer from '../components/Device/VideoContainer.vue';
 import NavigationBar from '../components/Device/NavigationBar.vue';
 import state from '../components/Scrcpy/scrcpy-state';
 
-const props = defineProps({
-    roomName: {
-        type: String,
-        required: true,
-        default: 'default-room',
-    },
-    currentUser: {
-        type: Object,
-        required: true,
-        default: () => ({
-            id: 'default-user',
-            name: 'Default User',
-        }),
-    },
-});
-
 const { width } = useDisplay();
 const showRightPanel = computed(() => width.value >= 960);
 

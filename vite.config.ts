@@ -9,18 +9,6 @@ export default defineConfig({
   plugins: [
     vue(),
     vuetify({ autoImport: true }),
-    {
-      name: 'vite-plugin-binary',
-      transform(code: string, id: string) {
-        if (id.endsWith('?binary')) {
-          const buffer = Buffer.from(code);
-          return {
-            code: `export default new Uint8Array(${JSON.stringify(Array.from(buffer))})`,
-            map: null
-          };
-        }
-      }
-    },
     Markdown() as Plugin,
     Binary() as Plugin,
   ],

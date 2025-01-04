@@ -1,8 +1,8 @@
 // 导入外部依赖
-import { AdbDaemonWebUsbDevice } from '@yume-chan/adb-daemon-webusb';
-import { AdbScrcpyClient, AdbScrcpyOptionsLatest } from '@yume-chan/adb-scrcpy';
-import { VERSION } from '@yume-chan/fetch-scrcpy-server';
-import { PcmPlayer } from '@yume-chan/pcm-player';
+import {AdbDaemonWebUsbDevice} from '@yume-chan/adb-daemon-webusb';
+import {AdbScrcpyClient, AdbScrcpyOptionsLatest} from '@yume-chan/adb-scrcpy';
+import {VERSION} from '@yume-chan/fetch-scrcpy-server';
+import {PcmPlayer} from '@yume-chan/pcm-player';
 import {
     clamp,
     CodecOptions,
@@ -20,20 +20,20 @@ import type {
     ScrcpyMediaStreamConfigurationPacket,
     ScrcpyMediaStreamDataPacket,
 } from '@yume-chan/scrcpy';
-import { Consumable, InspectStream, ReadableStream, WritableStream } from '@yume-chan/stream-extra';
-import { WebCodecsVideoDecoder } from '@yume-chan/scrcpy-decoder-webcodecs';
+import {Consumable, InspectStream, ReadableStream, WritableStream} from '@yume-chan/stream-extra';
+import {WebCodecsVideoDecoder} from '@yume-chan/scrcpy-decoder-webcodecs';
 
 // 导入本地依赖
-import { ScrcpyKeyboardInjector } from './input';
+import {ScrcpyKeyboardInjector} from './input';
 import recorder from './recorder';
 
-import SCRCPY_SERVER_BIN from '../../../public/scrcpy-server?binary';
+import SCRCPY_SERVER_BIN from './scrcpy-server-v2.6.1?binary';
 
 // 类型定义
 type RotationListener = (rotation: number, prevRotation: number) => void;
 
 // 常量定义
-const DEFAULT_VIDEO_CODEC = 'h264'; 
+const DEFAULT_VIDEO_CODEC = 'h264';
 const DEFAULT_MAX_SIZE = 1920;
 const DEFAULT_DISPLAY_ID = 0;
 const DEFAULT_POWER_ON = true;
@@ -198,30 +198,42 @@ export class ScrcpyState {
     }
 
     // 服务器相关方法
-async pushServer(): Promise<void> {
-    if (!this.device) {
-        console.error('错误：设备不可用');
-        return;
+    async pushServer(): Promise<void> {
+        debugger
+        if (!this.device) {
+            console.error('错误：设备不可用');
+            return;
+        }
+
+        try {
+            console.log('SCRCPY_SERVER_BIN 类型:', typeof SCRCPY_SERVER_BIN);
+            console.log('SCRCPY_SERVER_BIN 是否为 Uint8Array:', SCRCPY_SERVER_BIN instanceof Uint8Array);
+            
+            if (!(SCRCPY_SERVER_BIN instanceof Uint8Array)) {
+                throw new Error('SCRCPY_SERVER_BIN 类型不正确，期望 Uint8Array');
+            }
+            
+            const uint8Array = SCRCPY_SERVER_BIN;
+            
+            console.log('uint8Array 长度:', uint8Array.length);
+            console.log('uint8Array 的前100个字节:', Array.from(uint8Array.subarray(0, 100)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+            console.log('uint8Array 的最后100个字节:', Array.from(uint8Array.subarray(-100)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+            
+            const stream = new ReadableStream<Consumable<Uint8Array>>({
+                start(controller) {
+                    controller.enqueue(new Consumable(uint8Array));
+                    controller.close();
+                },
+            });
+
+            console.log('正在推送服务器到设备...');
+            await AdbScrcpyClient.pushServer(this.device as any, stream);
+            console.log('服务器推送完成');
+
+        } catch (error) {
+            console.error('推送服务器失败:', error);
+        }
     }
-
-    try {
-        const uint8Array = new Uint8Array(SCRCPY_SERVER_BIN);
-        console.log('SCRCPY_SERVER_BIN', uint8Array.length)
-        const stream = new ReadableStream<Consumable<Uint8Array>>({
-            start(controller) {
-                controller.enqueue(new Consumable(uint8Array));
-                controller.close();
-            },
-        });
-
-        console.log('正在推送服务器到设备...');
-        await AdbScrcpyClient.pushServer(this.device as any, stream);
-        console.log('服务器推送完成');
-
-    } catch (error) {
-        console.error('推送服务器失败:', error);
-    }
-}
 
     // 数据包类型检查
     private isConfigurationPacket(
@@ -245,7 +257,7 @@ async pushServer(): Promise<void> {
                 throw new Error('没有可用的解码器');
             }
             this.connecting = true;
-            // await this.pushServer();
+            await this.pushServer();
             const videoCodecOptions = new CodecOptions();
             const options = new AdbScrcpyOptionsLatest(
                 new ScrcpyOptionsLatest({
@@ -302,7 +314,7 @@ async pushServer(): Promise<void> {
                 if (!videoStream) {
                     throw new Error('获取视频流失败');
                 }
-                const { metadata: videoMetadata, stream: videoPacketStream } = videoStream;
+                const {metadata: videoMetadata, stream: videoPacketStream} = videoStream;
                 // 初始化视频大小
                 this.width = videoMetadata.width ?? 0;
                 this.height = videoMetadata.height ?? 0;
@@ -320,7 +332,7 @@ async pushServer(): Promise<void> {
                                 try {
                                     if (this.isConfigurationPacket(packet)) {
                                         try {
-                                            const { croppedWidth, croppedHeight } =
+                                            const {croppedWidth, croppedHeight} =
                                                 h264ParseConfiguration(packet.data);
                                             if (croppedWidth > 0 && croppedHeight > 0) {
                                                 this.width = croppedWidth;
