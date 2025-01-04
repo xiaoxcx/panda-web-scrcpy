@@ -1,6 +1,6 @@
 {
-  "name": "wscrcpy",
-  "short_name": "wscrcpy",
+  "name": "web-scrcpy",
+  "short_name": "web-scrcpy",
   "icons": [
     {
       "src": "./src/assets/folder/icon/android-chrome-192x192.png",

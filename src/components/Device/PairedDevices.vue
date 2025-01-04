@@ -219,7 +219,7 @@ const handleAddDevice = async () => {
             location="bottom"
         >
             <template #activator="{ props }">
-                <v-btn color="black" v-bind="props" append-icon="mdi-chevron-down">
+                <v-btn color="primary" v-bind="props" append-icon="mdi-chevron-down">
                     <v-tooltip activator="parent" location="end">设备切换</v-tooltip>
                     <v-icon size="20">mdi-cellphone-link</v-icon>
                     <span v-if="selected" class="text-body-1 font-weight-medium ml-2">
@@ -297,7 +297,7 @@ const handleAddDevice = async () => {
                                 </v-icon>
                                 <v-btn
                                     icon
-                                    color="black"
+                                    color="primary"
                                     variant="text"
                                     size="small"
                                     style="width: 35px; height: 35px"
