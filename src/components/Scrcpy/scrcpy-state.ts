@@ -232,16 +232,29 @@ export class ScrcpyState {
 
     // 启动方法
     async start(device: AdbDaemonWebUsbDevice) {
+        console.log('开始启动 scrcpy...');
         if (!device || this.rendererContainer === undefined) {
+            console.error('无效的参数');
             throw new Error('无效的参数');
         }
         this.device = device;
         try {
+            console.log('检查解码器...');
             if (!this.decoder) {
+                console.error('没有可用的解码器');
                 throw new Error('没有可用的解码器');
             }
             this.connecting = true;
-            await this.pushServer();
+            console.log('开始推送服务器...');
+            try {
+                await this.pushServer();
+                console.log('服务器推送完成');
+            } catch (error) {
+                console.error('推送服务器失败:', error);
+                throw new Error('推送服务器失败');
+            }
+
+            console.log('配置 scrcpy 选项...');
             const videoCodecOptions = new CodecOptions();
             const options = new AdbScrcpyOptionsLatest(
                 new ScrcpyOptionsLatest({
@@ -261,16 +274,30 @@ export class ScrcpyState {
                 })
             );
 
-            this.scrcpy = await AdbScrcpyClient.start(
-                this.device as any,
-                DEFAULT_SERVER_PATH,
-                VERSION,
-                options
-            );
+            console.log('开始启动 scrcpy 客户端...');
+            console.log('AdbScrcpyClient.start 参数:', {
+                device: this.device,
+                serverPath: DEFAULT_SERVER_PATH,
+                version: VERSION,
+                options: options
+            });
+            try {
+                this.scrcpy = await AdbScrcpyClient.start(
+                    this.device as any,
+                    DEFAULT_SERVER_PATH,
+                    VERSION,
+                    options
+                );
+            } catch (error) {
+                console.error('AdbScrcpyClient.start 失败:', error);
+                throw error;
+            }
 
             if (!this.scrcpy) {
+                console.error('启动 scrcpy 客户端失败');
                 throw new Error('启动 scrcpy 客户端失败');
             }
+            console.log('scrcpy 客户端启动成功');
 
             this.scrcpy.stdout.pipeTo(
                 new WritableStream<string>({
@@ -281,8 +308,10 @@ export class ScrcpyState {
             );
 
             if (this.scrcpy.videoStream) {
+                console.log('开始处理视频流...');
                 const videoStream = await this.scrcpy.videoStream;
                 if (!videoStream) {
+                    console.error('获取视频流失败');
                     throw new Error('获取视频流失败');
                 }
                 const { metadata: videoMetadata, stream: videoPacketStream } = videoStream;
@@ -291,15 +320,17 @@ export class ScrcpyState {
                 this.height = videoMetadata.height ?? 0;
                 this.rotation = 0; // 初始化为0，后续通过元数据更新
 
+                console.log(`视频元数据: 宽度=${this.width}, 高度=${this.height}`);
+
                 // 设置录制器的视频元数据
-                recorder.setVideoMetadata(videoMetadata);
+                // recorder.setVideoMetadata(videoMetadata);
 
                 if (this.decoder && videoPacketStream) {
                     (videoPacketStream as any)
                         .pipeThrough(
                             new InspectStream((packet: ScrcpyMediaStreamPacket) => {
                                 // 将数据包传递给录制器
-                                recorder.addVideoPacket(packet);
+                                // recorder.addVideoPacket(packet);
                                 try {
                                     if (this.isConfigurationPacket(packet)) {
                                         try {
@@ -308,6 +339,7 @@ export class ScrcpyState {
                                             if (croppedWidth > 0 && croppedHeight > 0) {
                                                 this.width = croppedWidth;
                                                 this.height = croppedHeight;
+                                                console.log(`更新视频尺寸: 宽度=${this.width}, 高度=${this.height}`);
                                                 // 更新视频容器大小
                                                 this.updateVideoContainer();
                                             }
@@ -330,6 +362,7 @@ export class ScrcpyState {
                                                 rotation <= 3
                                             ) {
                                                 this.rotation = rotation;
+                                                console.log(`屏幕旋转更新: ${this.rotation}`);
                                             }
                                         }
                                         if (packet.data instanceof Uint8Array) {
@@ -346,16 +379,23 @@ export class ScrcpyState {
                             console.error('处理数据包出错:', error);
                         });
                 }
+            } else {
+                console.error('未获取到视频流');
             }
 
+            console.log('设置键盘注入器和悬停助手...');
             this.keyboard = new ScrcpyKeyboardInjector(this.scrcpy);
             this.hoverHelper = new ScrcpyHoverHelper();
-            this.scrcpy.exit.then(() => this.dispose());
+            this.scrcpy.exit.then(() => {
+                console.log('scrcpy 客户端退出');
+                this.dispose();
+            });
 
             this.running = true;
+            console.log('scrcpy 启动完成');
             return this.scrcpy;
         } catch (e) {
-            console.error(e);
+            console.error('启动 scrcpy 失败:', e);
             this.connecting = false;
             this.dispose();
             return;

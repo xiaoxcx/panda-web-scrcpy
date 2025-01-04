@@ -1,9 +1,13 @@
 <template>
-  <DeviceView :room-name="roomName" :current-user="currentUser" />
+  <v-app>
+    <!-- <v-icon icon="mdi-cellphone-android" color="primary" size="large"></v-icon> -->
+    <DeviceView :room-name="roomName" :current-user="currentUser" />
+  </v-app>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { VApp, VIcon } from 'vuetify/components';
 import DeviceView from './views/DeviceView.vue';
 
 const roomName = ref('default-room');

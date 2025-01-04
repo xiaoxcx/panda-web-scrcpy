@@ -12,6 +12,7 @@
     "postinstall": "fetch-scrcpy-server 2.6.1"
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "@yume-chan/adb": "^0.0.24",
     "@yume-chan/adb-backend-webusb": "^0.0.19",
     "@yume-chan/adb-scrcpy": "^0.0.24",
@@ -23,7 +24,7 @@
     "@yume-chan/scrcpy": "^0.0.24",
     "@yume-chan/scrcpy-decoder-tinyh264": "^0.0.24",
     "@yume-chan/scrcpy-decoder-webcodecs": "^0.0.24",
-    "@yume-chan/stream-extra": "^1.0.0",
+    "@yume-chan/stream-extra": "^0.0.24",
     "@yume-chan/struct": "^0.0.24",
     "vue": "^3.3.4",
     "vuetify": "^3.3.5",
