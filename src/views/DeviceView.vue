@@ -229,7 +229,7 @@ const tabs = [
                     size="60"
                     color="black"
                     class="power-button mb-2"
-                    :loading="!client"
+                    :loading="client"
                   >
                     <v-icon x-large>mdi-power</v-icon>
                   </v-btn>
