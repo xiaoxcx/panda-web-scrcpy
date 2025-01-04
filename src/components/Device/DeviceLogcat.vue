@@ -69,7 +69,7 @@
                     <div class="log-cell tag">标签</div>
                     <div class="log-cell message">消息</div>
                 </div>
-                <div ref="logContainer" style="height: calc(100vh - 300px)" @scroll="handleScroll">
+                <div ref="logContainer" style="height: calc(100vh - 300px)">
                     <v-virtual-scroll
                         :items="filteredLogs"
                         :item-size="28"
