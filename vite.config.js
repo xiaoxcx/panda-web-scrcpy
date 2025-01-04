@@ -9,7 +9,7 @@ export default defineConfig({
     vuetify({ autoImport: true }),
     {
       name: 'vite-plugin-binary',
-      transform(code: string, id: string) {
+      transform(code, id) {
         if (id.endsWith('?binary')) {
           const buffer = Buffer.from(code);
           return {
