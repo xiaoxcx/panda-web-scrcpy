@@ -1,26 +1,22 @@
 <template>
-  <div id="app">
-    <h1>{{ message }}</h1>
-    <p>这是一个部署在GitHub Pages上的Vue 3 Demo项目</p>
-  </div>
+  <DeviceView :room-name="roomName" :current-user="currentUser" />
 </template>
 
-<script>
-export default {
-  name: 'App',
-  data() {
-    return {
-      message: '欢迎来到Vue 3 GitHub Pages Demo!'
-    }
-  }
-}
+<script setup>
+import { ref } from 'vue';
+import DeviceView from './views/DeviceView.vue';
+
+const roomName = ref('default-room');
+const currentUser = ref({
+  id: 'default-user',
+  name: 'Default User',
+});
 </script>
 
 <style>
-#app {
+body {
+  margin: 0;
+  padding: 0;
   font-family: Arial, sans-serif;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
 }
 </style>
