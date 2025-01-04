@@ -1,15 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from 'vue';
 import { useDisplay } from 'vuetify';
-// import highQA from '../assets/high-qa.png';
 import PairedDevices from '../components/Device/PairedDevices.vue';
 import DeviceShell from '../components/Device/DeviceShell.vue';
 import DeviceLogcat from '../components/Device/DeviceLogcat.vue';
 import DeviceInstall from '../components/Device/DeviceInstall.vue';
 import DeviceInfo from '../components/Device/DeviceInfo.vue';
-// import FileManger from '../components/Device/FileManager.vue';
 import AbstractList from './AbstractList.vue';
-import DeviceView from './DeviceView.vue';
+import VideoContainer from '../components/Device/VideoContainer.vue';
+import NavigationBar from '../components/Device/NavigationBar.vue';
+import state from '../components/Scrcpy/scrcpy-state';
 
 const props = defineProps({
     roomName: {
@@ -109,10 +109,46 @@ const updateContainerSize = () => {
 };
 
 const containerRef = ref(null);
+const DeviceContainerRef = ref(null);
+const videoWrapperRef = ref(null);
+
+// 计算容器的实际可用空间
+const containerDimensions = computed(() => {
+    const horizontalPadding = 20;
+    const verticalPadding = 30;
+    const navBarWidth = 80;
+    const borderWidth = 6; // 考虑边框宽度
+
+    return {
+        width: leftPanelWidth.value - (navBarWidth + horizontalPadding + borderWidth),
+        height: containerSize.value.height - (verticalPadding * 2 + borderWidth),
+    };
+});
+
+// 监听容器尺寸变化
+watch(
+    () => containerDimensions.value,
+    (newDimensions) => {
+        if (videoWrapperRef.value) {
+            // 更新视频包装器的尺寸
+            videoWrapperRef.value.style.width = `${newDimensions.width}px`;
+            videoWrapperRef.value.style.height = `${newDimensions.height}px`;
+            // 通知 state 更新视频容器
+            state.updateVideoContainer();
+        }
+    },
+    { immediate: true }
+);
 
 onMounted(() => {
     updateContainerSize();
     window.addEventListener('resize', updateContainerSize);
+    if (videoWrapperRef.value) {
+        // 设置初始尺寸
+        const dimensions = containerDimensions.value;
+        videoWrapperRef.value.style.width = `${dimensions.width}px`;
+        videoWrapperRef.value.style.height = `${dimensions.height}px`;
+    }
 });
 
 onUnmounted(() => {
@@ -142,7 +178,6 @@ const tabs = [
     { title: '应用安装', icon: 'mdi-android', component: DeviceInstall },
     { title: '终端', icon: 'mdi-console', component: DeviceShell },
     { title: 'Logcat', icon: 'mdi-android', component: DeviceLogcat },
-    // { title: '文件管理', icon: 'mdi-android', component: FileManger },
 ];
 </script>
 
@@ -176,11 +211,14 @@ const tabs = [
                 <div class="left-panel" :style="{ width: leftPanelWidth + 'px' }">
                     <v-card class="panel-content">
                         <v-card-text class="d-flex align-center justify-center">
-                            <DeviceView
-                                v-if="connected"
-                                :container-width="leftPanelWidth"
-                                :container-height="containerSize.height"
-                            />
+                            <div v-if="connected" ref="DeviceContainerRef" class="device-container">
+                                <div ref="videoWrapperRef" class="video-wrapper">
+                                    <VideoContainer />
+                                </div>
+                                <div class="navigation-wrapper">
+                                    <NavigationBar />
+                                </div>
+                            </div>
                             <div v-else class="d-flex align-center justify-center">
                                 <div
                                     class="loading-indicator"
@@ -330,5 +368,39 @@ const tabs = [
             display: none;
         }
     }
+}
+
+.device-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    padding: 30px 10px;
+    gap: 16px;
+    box-sizing: border-box;
+    background: transparent;
+}
+
+.video-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border-radius: 16px;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+.navigation-wrapper {
+    width: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
+    background: transparent;
 }
 </style>

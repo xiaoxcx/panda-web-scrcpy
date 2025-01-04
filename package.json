@@ -4,17 +4,41 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "run-p type-check build-only",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "postinstall": "fetch-scrcpy-server 2.6.1"
   },
   "dependencies": {
+    "@yume-chan/adb": "^0.0.24",
+    "@yume-chan/adb-backend-webusb": "^0.0.19",
+    "@yume-chan/adb-scrcpy": "^0.0.24",
+    "@yume-chan/android-bin": "^0.0.24",
+    "@yume-chan/aoa": "^0.0.24",
+    "@yume-chan/event": "^0.0.24",
+    "@yume-chan/fetch-scrcpy-server": "^0.0.24",
+    "@yume-chan/pcm-player": "^0.0.24",
+    "@yume-chan/scrcpy": "^0.0.24",
+    "@yume-chan/scrcpy-decoder-tinyh264": "^0.0.24",
+    "@yume-chan/scrcpy-decoder-webcodecs": "^0.0.24",
+    "@yume-chan/stream-extra": "^1.0.0",
+    "@yume-chan/struct": "^0.0.24",
     "vue": "^3.3.4",
-    "vuetify": "^3.3.5"
+    "vuetify": "^3.3.5",
+    "webm-muxer": "^5.0.3",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
+    "@yume-chan/adb-credential-web": "^0.0.24",
+    "@yume-chan/adb-daemon-webusb": "^0.0.24",
+    "npm-run-all": "^4.1.5",
     "sass": "^1.63.6",
     "vite": "^5.0.0",
-    "vite-plugin-vuetify": "^2.0.4"
+    "vite-plugin-vuetify": "^2.0.4",
+    "vue-tsc": "^2.2.0"
   }
 }
