@@ -191,6 +191,7 @@ const checkRendering = () => {
 
 let renderingCheckInterval: number;
 
+
 onMounted(() => {
     if (videoContainer.value) {
         videoContainer.value.addEventListener('wheel', handleWheel, { passive: false });
@@ -236,7 +237,6 @@ provide('setVideoContainerFocus', (focused: boolean) => {
 <template>
     <div ref="videoWrapper" class="video-wrapper">
         <div
-            v-show="isFullyRendered"
             ref="videoContainer"
             class="video-container"
             tabindex="0"

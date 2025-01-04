@@ -1,8 +1,8 @@
 // 导入外部依赖
-import {AdbDaemonWebUsbDevice} from '@yume-chan/adb-daemon-webusb';
-import {AdbScrcpyClient, AdbScrcpyOptionsLatest} from '@yume-chan/adb-scrcpy';
-import {VERSION} from '@yume-chan/fetch-scrcpy-server';
-import {PcmPlayer} from '@yume-chan/pcm-player';
+import { AdbDaemonWebUsbDevice } from '@yume-chan/adb-daemon-webusb';
+import { AdbScrcpyClient, AdbScrcpyOptionsLatest } from '@yume-chan/adb-scrcpy';
+import { VERSION } from '@yume-chan/fetch-scrcpy-server';
+import { PcmPlayer } from '@yume-chan/pcm-player';
 import {
     clamp,
     CodecOptions,
@@ -20,14 +20,15 @@ import type {
     ScrcpyMediaStreamConfigurationPacket,
     ScrcpyMediaStreamDataPacket,
 } from '@yume-chan/scrcpy';
-import {Consumable, InspectStream, ReadableStream, WritableStream} from '@yume-chan/stream-extra';
-import {WebCodecsVideoDecoder} from '@yume-chan/scrcpy-decoder-webcodecs';
+import { Consumable, InspectStream, ReadableStream, WritableStream } from '@yume-chan/stream-extra';
+import { WebCodecsVideoDecoder } from '@yume-chan/scrcpy-decoder-webcodecs';
 
 // 导入本地依赖
-import {ScrcpyKeyboardInjector} from './input';
+import { ScrcpyKeyboardInjector } from './input';
 import recorder from './recorder';
 
-import SCRCPY_SERVER_BIN from './scrcpy-server-v2.6.1?binary';
+// @ts-ignore
+import SCRCPY_SERVER_BIN from '../../../public/scrcpy-server-v2.6.1?binary';
 
 // 类型定义
 type RotationListener = (rotation: number, prevRotation: number) => void;
@@ -199,37 +200,21 @@ export class ScrcpyState {
 
     // 服务器相关方法
     async pushServer(): Promise<void> {
-        debugger
         if (!this.device) {
-            console.error('错误：设备不可用');
+            console.error('设备不可用');
             return;
         }
 
         try {
-            console.log('SCRCPY_SERVER_BIN 类型:', typeof SCRCPY_SERVER_BIN);
-            console.log('SCRCPY_SERVER_BIN 是否为 Uint8Array:', SCRCPY_SERVER_BIN instanceof Uint8Array);
-            
-            if (!(SCRCPY_SERVER_BIN instanceof Uint8Array)) {
-                throw new Error('SCRCPY_SERVER_BIN 类型不正确，期望 Uint8Array');
-            }
-            
-            const uint8Array = SCRCPY_SERVER_BIN;
-            
-            console.log('uint8Array 长度:', uint8Array.length);
-            console.log('uint8Array 的前100个字节:', Array.from(uint8Array.subarray(0, 100)).map(b => b.toString(16).padStart(2, '0')).join(' '));
-            console.log('uint8Array 的最后100个字节:', Array.from(uint8Array.subarray(-100)).map(b => b.toString(16).padStart(2, '0')).join(' '));
-            
+            console.log('开始推送服务器...', new Uint8Array(SCRCPY_SERVER_BIN).length);
             const stream = new ReadableStream<Consumable<Uint8Array>>({
                 start(controller) {
-                    controller.enqueue(new Consumable(uint8Array));
+                    controller.enqueue(new Consumable(new Uint8Array(SCRCPY_SERVER_BIN)));
                     controller.close();
                 },
             });
 
-            console.log('正在推送服务器到设备...');
             await AdbScrcpyClient.pushServer(this.device as any, stream);
-            console.log('服务器推送完成');
-
         } catch (error) {
             console.error('推送服务器失败:', error);
         }
@@ -277,25 +262,12 @@ export class ScrcpyState {
                 })
             );
 
-            console.log('开始启动 scrcpy 客户端...');
-            console.log('AdbScrcpyClient.start 参数:', {
-                device: this.device,
-                serverPath: DEFAULT_SERVER_PATH,
-                version: VERSION,
-                options: options
-            });
-            console.log(`CLASSPATH=${DEFAULT_SERVER_PATH} app_process / com.genymobile.scrcpy.Server ${VERSION} ${options.serialize()}`);
-            try {
-                this.scrcpy = await AdbScrcpyClient.start(
-                    this.device as any,
-                    DEFAULT_SERVER_PATH,
-                    VERSION,
-                    options
-                );
-            } catch (error) {
-                console.error('AdbScrcpyClient.start 失败:', error);
-                throw error;
-            }
+            this.scrcpy = await AdbScrcpyClient.start(
+                this.device as any,
+                DEFAULT_SERVER_PATH,
+                VERSION,
+                options
+            );
 
             if (!this.scrcpy) {
                 throw new Error('启动 scrcpy 客户端失败');
@@ -314,7 +286,7 @@ export class ScrcpyState {
                 if (!videoStream) {
                     throw new Error('获取视频流失败');
                 }
-                const {metadata: videoMetadata, stream: videoPacketStream} = videoStream;
+                const { metadata: videoMetadata, stream: videoPacketStream } = videoStream;
                 // 初始化视频大小
                 this.width = videoMetadata.width ?? 0;
                 this.height = videoMetadata.height ?? 0;
@@ -332,7 +304,7 @@ export class ScrcpyState {
                                 try {
                                     if (this.isConfigurationPacket(packet)) {
                                         try {
-                                            const {croppedWidth, croppedHeight} =
+                                            const { croppedWidth, croppedHeight } =
                                                 h264ParseConfiguration(packet.data);
                                             if (croppedWidth > 0 && croppedHeight > 0) {
                                                 this.width = croppedWidth;

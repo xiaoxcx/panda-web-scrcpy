@@ -1,8 +1,8 @@
 <template>
   <v-container class="d-flex flex-column align-center justify-center h-100">
-    <v-img :src="highQA" max-height="80" max-width="200" contain alt="logo" class="mb-6" />
+    <img :src="highQA" height="80" alt="logo" />
 
-    <h2 class="text-h5 mb-8 text-grey-darken-1 text-center">✨ 给你，免费，永远 ✨</h2>
+    <h2 class="text-h5 mb-8 text-grey-darken-1 text-center">✨ 免费, 开源, 无广告 ✨</h2>
 
     <v-sheet max-width="400" width="100%" class="pa-4">
       <div
