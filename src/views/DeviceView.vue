@@ -185,7 +185,7 @@ const tabs = [
     <v-app>
         <v-app-bar height="64" color="white" app>
             <v-container class="d-flex align-center justify-center pa-0" fluid>
-                <!-- <v-img :src="highQA" max-width="110" max-height="24" class="mr-6 ml-10" /> -->
+                <v-img :src="highQA" max-width="110" max-height="24" class="mr-6 ml-10" />
                 <PairedDevices
                     @pair-device="onPairDevice"
                     @update-connection-status="handleConnectionStatus"

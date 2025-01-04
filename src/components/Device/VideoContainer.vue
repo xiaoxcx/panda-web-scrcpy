@@ -235,7 +235,6 @@ provide('setVideoContainerFocus', (focused: boolean) => {
 
 <template>
     <div ref="videoWrapper" class="video-wrapper">
-        <div v-if="!isFullyRendered" class="loading-indicator">正在加载...</div>
         <div
             v-show="isFullyRendered"
             ref="videoContainer"

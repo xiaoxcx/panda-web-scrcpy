@@ -1,11 +1,7 @@
 import { AdbDaemonWebUsbDeviceManager } from '@yume-chan/adb-daemon-webusb';
 import AdbWebCredentialStore from '@yume-chan/adb-credential-web';
 import { Adb, AdbDaemonTransport, type AdbPacketData } from '@yume-chan/adb';
-import {
-    Consumable,
-    ReadableStream,
-    WritableStream,
-} from '@yume-chan/stream-extra';
+import { Consumable, ReadableStream, WritableStream } from '@yume-chan/stream-extra';
 
 export interface DeviceMeta {
     serial: string;
@@ -63,10 +59,7 @@ export class AdbClient {
         this.device = new Adb(
             await AdbDaemonTransport.authenticate({
                 serial: deviceMeta.serial,
-                connection: {
-                    readable: readable as any,
-                    writable: writable as any
-                },
+                connection: { readable, writable },
                 credentialStore: this.credentialStore,
             })
         );

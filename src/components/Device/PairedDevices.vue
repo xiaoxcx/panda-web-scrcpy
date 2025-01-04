@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { ref, defineEmits, onMounted, shallowRef, watch, computed, onUnmounted } from 'vue';
+import { ref, onMounted, shallowRef, watch, computed, onUnmounted } from 'vue';
 import client from '../Scrcpy/adb-client';
 import { AdbDaemonWebUsbDeviceWatcher, AdbDaemonWebUsbDevice } from '@yume-chan/adb-daemon-webusb';
 import DeviceGuide from './DeviceGuide.vue';
 
-const emit = defineEmits<{
-    (e: 'pair-device', device: AdbDaemonWebUsbDevice): void;
-    (e: 'remove-device', serial: string): void;
-    (e: 'update-connection-status', status: boolean): void;
-}>();
+// 使用 Vue 3 的新语法定义 emit
+const emit = defineEmits(['pair-device', 'remove-device', 'update-connection-status']);
 
 const showDevices = ref(false);
 const selected = shallowRef<AdbDaemonWebUsbDevice | undefined>(undefined);
