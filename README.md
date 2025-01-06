@@ -14,6 +14,7 @@ web-scrcpy 继承了scrcpy的优点，提供了高性能、低延迟的屏幕镜
 2. 打开浏览器，访问 [在线体验地址](https://maxwellos.github.io/web-scrcpy/)。
 3. 按照页面提示，连接并控制Android设备。
 4. 使用鼠标和键盘与设备进行交互，支持全屏模式、屏幕录制和截图功能。
+
 ![High Quality Screenshot](desc/image.png)
 
 
