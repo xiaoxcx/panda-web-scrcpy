@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import DeviceBasicInfo from './DeviceBasicInfo.vue';
+import BatteryInfo from './BatteryInfo.vue';
+import StorageInfo from './StorageInfo.vue';
 import client from '../Scrcpy/adb-client';
 import { Adb } from '@yume-chan/adb';
 
@@ -15,7 +18,9 @@ const deviceInfo = ref({
     screenDensity: '',
     ipAddress: '',
     totalMemory: '',
+    usedMemory: '',
     totalStorage: '',
+    usedStorage: '',
     serialNumber: '',
     cpuInfo: '',
     cpuMin: '',
@@ -37,6 +42,14 @@ const deviceInfo = ref({
     basebandVer: '',
     cpuAbi: '',
     abis: '',
+    batteryPercentage: 0,
+    voltage: 0,
+    temperature: 0,
+    bootloader: '',
+    abPartition: '',
+    uptime: '',
+    storageType: '',
+    kernelVersion: '',
 });
 
 async function executeShellCommand(device: Adb, command: string): Promise<string> {
@@ -81,9 +94,17 @@ async function getDeviceInfo() {
             adbDevice,
             "free -m | awk '/Mem:/ {print $2}'"
         )} MB`,
+        usedMemory: await executeShellCommand(
+            adbDevice,
+            "free -m | awk '/Mem:/ {print $3}'"
+        ),
         totalStorage: await executeShellCommand(
             adbDevice,
             "df -h /data | awk '/\\/data/ {print $2}'"
+        ),
+        usedStorage: await executeShellCommand(
+            adbDevice,
+            "df -h /data | awk '/\\/data/ {print $3}'"
         ),
         serialNumber: await adbDevice.getProp('ro.serialno'),
         cpuInfo: await adbDevice.getProp('ro.hardware'),
@@ -115,8 +136,83 @@ async function getDeviceInfo() {
         basebandVer: await adbDevice.getProp('gsm.version.baseband'),
         cpuAbi: await adbDevice.getProp('ro.product.cpu.abi'),
         abis: await adbDevice.getProp('ro.product.cpu.abilist'),
+        batteryPercentage: parseInt(await executeShellCommand(adbDevice, 'dumpsys battery | grep level | awk \'{print $2}\''), 10),
+        voltage: parseFloat((await executeShellCommand(
+            adbDevice, 
+            'dumpsys battery | grep voltage | awk \'{print $2}\''
+        )) || '0') / 1000,
+        temperature: parseInt(await executeShellCommand(adbDevice, 'dumpsys battery | grep temperature | awk \'{print $2}\''), 10) / 10,
+        bootloader: await executeShellCommand(
+            adbDevice,
+            'getprop ro.boot.verifiedbootstate'
+        ),
+        abPartition: await executeShellCommand(
+            adbDevice,
+            'getprop ro.boot.slot_suffix'
+        ),
+        uptime: await executeShellCommand(
+            adbDevice,
+            'cat /proc/uptime | cut -d. -f1'
+        ),
+        storageType: await executeShellCommand(
+            adbDevice,
+            'getprop ro.boot.bootdevice'
+        ),
+        kernelVersion: await executeShellCommand(
+            adbDevice,
+            'uname -r'
+        ),
     };
 }
+
+const openSettings = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.settings.SETTINGS');
+};
+
+const openDeveloperOptions = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.settings.APPLICATION_DEVELOPMENT_SETTINGS');
+};
+
+const openBrowser = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.intent.action.VIEW -d "http://www.google.com"');
+};
+
+const openWifiSettings = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.settings.WIFI_SETTINGS');
+};
+
+const openDisplaySettings = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.settings.DISPLAY_SETTINGS');
+};
+
+const openSoundSettings = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.settings.SOUND_SETTINGS');
+};
+
+const openAppSettings = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.settings.APPLICATION_SETTINGS');
+};
+
+const openAboutPhone = async () => {
+    if (!device.value) return;
+    await executeShellCommand(device.value, 'am start -a android.settings.DEVICE_INFO_SETTINGS');
+};
+
+const refreshDeviceInfo = async () => {
+    isLoading.value = true;
+    try {
+        await getDeviceInfo();
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 onMounted(async () => {
     if (client.isConnected) {
@@ -127,93 +223,110 @@ onMounted(async () => {
         isLoading.value = false;
     }
 });
-
-function getIconForKey(key: string): string {
-    const iconMap: { [key: string]: string } = {
-        androidVersion: 'mdi-android',
-        deviceModel: 'mdi-cellphone',
-        resolution: 'mdi-monitor',
-        manufacturer: 'mdi-factory',
-        ipAddress: 'mdi-ip-network',
-        totalMemory: 'mdi-memory',
-        totalStorage: 'mdi-harddisk',
-        serialNumber: 'mdi-barcode',
-        cpuInfo: 'mdi-cpu-64-bit',
-        screenDensity: 'mdi-monitor',
-        brand: 'mdi-factory',
-        product: 'mdi-package-variant',
-        sdkVersionCode: 'mdi-code-tags',
-        cpuMin: 'mdi-speedometer-slow',
-        cpuMax: 'mdi-speedometer',
-        cpuCur: 'mdi-speedometer-medium',
-        board: 'mdi-artboard',
-        display: 'mdi-monitor',
-        id: 'mdi-identifier',
-        fingerPrint: 'mdi-fingerprint',
-        host: 'mdi-server',
-        hardware: 'mdi-chip',
-        device: 'mdi-cellphone',
-        user: 'mdi-account',
-        radioVersion: 'mdi-radio-tower',
-        tags: 'mdi-tag',
-        type: 'mdi-format-list-bulleted-type',
-        basebandVer: 'mdi-radio-tower',
-        cpuAbi: 'mdi-cpu-64-bit',
-        abis: 'mdi-cpu-64-bit',
-    };
-    return iconMap[key] || 'mdi-information';
-}
-
-function getDisplayName(key: string): string {
-    const displayNames: { [key: string]: string } = {
-        androidVersion: 'Android 版本',
-        deviceModel: '设备型号',
-        resolution: '设备分辨率',
-        manufacturer: '制造商',
-        ipAddress: 'IP 地址',
-        totalMemory: '总内存',
-        totalStorage: '总存储',
-        serialNumber: '序列号',
-        cpuInfo: 'CPU 信息',
-        screenDensity: '屏幕密度',
-        brand: '设备品牌',
-        product: '产品名称',
-        sdkVersionCode: 'SDK 版本号',
-        cpuMin: 'CPU 最小频率',
-        cpuMax: 'CPU 最大频率',
-        cpuCur: 'CPU 当前频率',
-        board: '主板名称',
-        display: '显示屏参数',
-        id: '修订版本列表',
-        fingerPrint: '设备指纹',
-        host: '执行代码编译的 Host 值',
-        hardware: '硬件名',
-        device: '设备参数',
-        user: '执行代码编译的 User 值',
-        radioVersion: '无线电固件版本',
-        tags: '描述 Build 的标签',
-        type: 'Builder 类型',
-        basebandVer: '基带版本',
-        cpuAbi: '主要指令集',
-        abis: '支持的指令集',
-    };
-    return displayNames[key] || key;
-}
 </script>
 
 <template>
     <div class="device-info">
-        <v-progress-circular v-if="isLoading" indeterminate color="primary"></v-progress-circular>
-        <div v-else class="info-grid">
-            <v-card v-for="(value, key) in deviceInfo" :key="key" class="info-item">
-                <v-card-title>
-                    <v-icon class="info-icon">{{ getIconForKey(key) }}</v-icon>
-                    <span class="info-label">{{ getDisplayName(key) }}</span>
-                </v-card-title>
-                <v-card-text>
-                    <div class="info-value">{{ value }}</div>
-                </v-card-text>
-            </v-card>
+        <div class="info-container">
+            <v-fade-transition mode="out-in">
+                <div v-if="isLoading" :key="'loading'" class="info-grid">
+                    <div class="info-main">
+                        <v-skeleton-loader
+                            type="article, actions"
+                            class="skeleton-card"
+                        ></v-skeleton-loader>
+                    </div>
+                    <div class="info-side">
+                        <v-skeleton-loader
+                            type="card"
+                            class="skeleton-card"
+                        ></v-skeleton-loader>
+                        <v-skeleton-loader
+                            type="card"
+                            class="skeleton-card"
+                        ></v-skeleton-loader>
+                    </div>
+                </div>
+                <div v-else :key="'content'" class="info-grid">
+                    <div class="info-main">
+                        <div class="basic-info-container">
+                            <DeviceBasicInfo :deviceInfo="deviceInfo" />
+                            <v-btn
+                                class="refresh-btn"
+                                icon="mdi-refresh"
+                                variant="text"
+                                :loading="isLoading"
+                                @click="refreshDeviceInfo"
+                                title="刷新设备信息"
+                            ></v-btn>
+                        </div>
+                        <div class="device-controls">
+                            <v-btn-group variant="outlined" class="control-group">
+                                <v-btn 
+                                    prepend-icon="mdi-cog" 
+                                    @click="openSettings"
+                                    title="打开系统设置"
+                                >
+                                    设置
+                                </v-btn>
+                                <v-btn 
+                                    prepend-icon="mdi-bug" 
+                                    @click="openDeveloperOptions"
+                                    title="打开开发者选项"
+                                >
+                                    开发者
+                                </v-btn>
+                                <v-btn 
+                                    prepend-icon="mdi-web" 
+                                    @click="openBrowser"
+                                    title="打开浏览器"
+                                >
+                                    浏览器
+                                </v-btn>
+                                <v-btn 
+                                    prepend-icon="mdi-wifi" 
+                                    @click="openWifiSettings"
+                                    title="打开WiFi设置"
+                                >
+                                    WiFi
+                                </v-btn>
+                            </v-btn-group>
+
+                            <v-btn-group variant="outlined" class="control-group">
+                                <v-btn 
+                                    prepend-icon="mdi-cellphone-screenshot" 
+                                    @click="openDisplaySettings"
+                                    title="打开显示设置"
+                                >
+                                    显示
+                                </v-btn>
+                                <v-btn 
+                                    prepend-icon="mdi-apps" 
+                                    @click="openAppSettings"
+                                    title="打开应用设置"
+                                >
+                                    应用
+                                </v-btn>
+                                <v-btn 
+                                    prepend-icon="mdi-information" 
+                                    @click="openAboutPhone"
+                                    title="关于手机"
+                                >
+                                    关于
+                                </v-btn>
+                            </v-btn-group>
+                        </div>
+                    </div>
+                    <div class="info-side">
+                        <BatteryInfo 
+                            :batteryPercentage="deviceInfo.batteryPercentage" 
+                            :voltage="deviceInfo.voltage" 
+                            :temperature="deviceInfo.temperature" 
+                        />
+                        <StorageInfo :deviceInfo="deviceInfo" />
+                    </div>
+                </div>
+            </v-fade-transition>
         </div>
     </div>
 </template>
@@ -225,56 +338,112 @@ function getDisplayName(key: string): string {
     overflow-y: auto;
 }
 
-.loading-spinner {
+.info-container {
+    position: relative;
+    min-height: 400px;
+}
+
+.basic-info-container {
+    position: relative;
+}
+
+.refresh-btn {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 8px;
+    right: 8px;
 }
 
 .info-grid {
+    padding-top: 48px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: 24px;
+}
+
+.info-main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.device-controls {
+    display: flex;
+    flex-direction: column;
     gap: 16px;
-    align-items: stretch;
+    padding: 16px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.info-icon {
-    margin-right: 12px;
-    font-size: 24px;
+.control-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 8px;
+    width: 100%;
 }
 
-.info-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--v-text-primary);
-    margin-bottom: 4px;
+.control-group :deep(.v-btn) {
+    flex: 1;
+    text-transform: none;
+    min-width: 0;
+    padding: 0 8px;
 }
 
-.info-value {
-    font-size: 1rem;
-    color: var(--v-text-secondary);
-    word-break: break-word;
-    line-height: 1.4;
+.info-side {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
 }
 
-/* 适配暗色主题 */
-:deep(.v-theme--dark) .v-card {
-    background-color: var(--v-surface-variant-dark);
+.info-side :deep(.v-card) {
+    height: 100%;
+    min-height: 200px;
 }
 
-/* 响应式调整 */
-@media (max-width: 600px) {
+@media (max-width: 1200px) {
     .info-grid {
         grid-template-columns: 1fr;
     }
 
-    .device-info {
+    .info-side {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .device-controls {
         padding: 12px;
     }
 
-    .v-card {
-        margin-bottom: 8px;
+    .control-group {
+        grid-template-columns: 1fr 1fr;
     }
+
+    .info-side {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-side :deep(.v-card) {
+        min-height: 180px;
+    }
+}
+
+/* 适配暗色主题 */
+:deep(.v-theme--dark) .device-controls {
+    background-color: var(--v-surface-variant-dark);
+}
+
+.skeleton-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    height: 100%;
+    min-height: 200px;
+}
+
+/* 适配暗色主题 */
+:deep(.v-theme--dark) .skeleton-card {
+    background-color: var(--v-surface-variant-dark);
 }
 </style>

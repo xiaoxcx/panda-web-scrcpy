@@ -191,12 +191,27 @@ const checkRendering = () => {
 
 let renderingCheckInterval: number;
 
+// 添加鼠标进入事件处理
+const handleMouseEnter = () => {
+    if (videoContainer.value) {
+        videoContainer.value.focus();
+        isVideoContainerFocused.value = true;
+    }
+};
+
+// 添加鼠标离开事件处理
+const handleMouseLeave = () => {
+    isVideoContainerFocused.value = false;
+};
 
 onMounted(() => {
     if (videoContainer.value) {
         videoContainer.value.addEventListener('wheel', handleWheel, { passive: false });
         videoContainer.value.addEventListener('focus', handleFocus);
         videoContainer.value.addEventListener('blur', handleBlur);
+        // 添加鼠标进入离开事件监听
+        videoContainer.value.addEventListener('mouseenter', handleMouseEnter);
+        videoContainer.value.addEventListener('mouseleave', handleMouseLeave);
     }
     if (client.device && videoContainer.value) {
         state.setRendererContainer(videoContainer.value);
@@ -219,6 +234,9 @@ onUnmounted(() => {
         videoContainer.value.removeEventListener('wheel', handleWheel);
         videoContainer.value.removeEventListener('focus', handleFocus);
         videoContainer.value.removeEventListener('blur', handleBlur);
+        // 移除鼠标进入离开事件监听
+        videoContainer.value.removeEventListener('mouseenter', handleMouseEnter);
+        videoContainer.value.removeEventListener('mouseleave', handleMouseLeave);
     }
     if ('keyboard' in navigator) {
         // navigator.keyboard.unlock();
@@ -247,6 +265,8 @@ provide('setVideoContainerFocus', (focused: boolean) => {
             @pointerleave="handlePointerLeave"
             @contextmenu="handleContextMenu"
             @wheel="handleWheel"
+            @mouseenter="handleMouseEnter"
+            @mouseleave="handleMouseLeave"
         />
     </div>
 </template>

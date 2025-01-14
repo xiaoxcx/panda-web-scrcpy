@@ -26,6 +26,7 @@
     "@yume-chan/scrcpy-decoder-webcodecs": "^0.0.24",
     "@yume-chan/stream-extra": "^0.0.24",
     "@yume-chan/struct": "^0.0.24",
+    "file-saver": "^2.0.5",
     "markdown-it": "^14.1.0",
     "vue": "^3.3.4",
     "vuetify": "^3.3.5",
