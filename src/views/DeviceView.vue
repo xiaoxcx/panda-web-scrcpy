@@ -199,11 +199,11 @@ const showDeviceDrawer = ref(false);
   <v-app>
     <v-app-bar height="64" color="white" app>
       <v-container class="d-flex align-center justify-center pa-0" fluid>
-        <v-img
+          <v-img
           :src="logo"
-          max-width="110"
+          max-width="24"
           max-height="24"
-          class="mr-6 ml-10"
+          class="mr-1 ml-10"
         />
         <PairedDevices
           @pair-device="onPairDevice"
@@ -216,7 +216,7 @@ const showDeviceDrawer = ref(false);
             <v-btn
               icon
               class="mr-2"
-              href="https://github.com/Maxwellos/web-scrcpy"
+              href="https://pandatestgrid.github.io/panda-web-scrcpy/"
               target="_blank"
               title="GitHub"
             >
