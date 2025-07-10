@@ -12,5 +12,5 @@ export default defineConfig({
     Markdown() as Plugin,
     Binary() as Plugin,
   ],
-  base: '/web-scrcpy/', // 设置为您的 GitHub 仓库名
+  base: '/panda-web-scrcpy/', // 设置为您的 GitHub 仓库名
 });

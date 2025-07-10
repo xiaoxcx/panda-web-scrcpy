@@ -14,7 +14,7 @@ panda-web-scrcpy 是一个基于Web的远程控制工具，允许用户通过浏
 ## 使用说明
 panda-web-scrcpy 继承了scrcpy的优点，提供了高性能、低延迟的屏幕镜像和控制功能。以下是详细的使用说明：
 1. 连接Android设备到电脑，并确保设备已启用开发者选项和USB调试。
-2. 打开浏览器，访问 [在线体验地址](https://maxwellos.github.io/web-scrcpy/)。
+2. 打开浏览器，访问 [在线体验地址](https://pandatestgrid.github.io/panda-web-scrcpy/)。
 3. 按照页面提示，连接并控制Android设备。
 4. 使用鼠标和键盘与设备进行交互，支持全屏模式、屏幕录制和截图功能。
 
