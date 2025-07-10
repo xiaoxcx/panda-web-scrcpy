@@ -11,7 +11,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const response = await fetch('https://api.github.com/repos/Maxwellos/web-scrcpy')
+    const response = await fetch('https://api.github.com/repos/pandatestgrid/panda-web-scrcpy')
     const data = await response.json()
     stats.value = {
       stars: data.stargazers_count,
@@ -32,7 +32,7 @@ onMounted(async () => {
       variant="text"
       density="comfortable"
       class="github-stat px-2"
-      href="https://github.com/Maxwellos/web-scrcpy/stargazers"
+      href="https://github.com/pandatestgrid/panda-web-scrcpy/stargazers"
       target="_blank"
       :loading="loading"
     >
@@ -44,7 +44,7 @@ onMounted(async () => {
       variant="text"
       density="comfortable"
       class="github-stat px-2"
-      href="https://github.com/Maxwellos/web-scrcpy/network/members"
+      href="https://github.com/pandatestgrid/panda-web-scrcpy/network/members"
       target="_blank"
       :loading="loading"
     >
@@ -56,7 +56,7 @@ onMounted(async () => {
       variant="text"
       density="comfortable"
       class="github-stat px-2"
-      href="https://github.com/Maxwellos/web-scrcpy/watchers"
+      href="https://github.com/pandatestgrid/panda-web-scrcpy/watchers"
       target="_blank"
       :loading="loading"
     >
@@ -71,4 +71,4 @@ onMounted(async () => {
   min-width: 0;
   color: rgba(0, 0, 0, 0.7);
 }
-</style> 
+</style>
