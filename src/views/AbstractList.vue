@@ -1,6 +1,6 @@
 <template>
   <v-container class="d-flex flex-column align-center justify-center h-100">
-    <img :src="highQA" height="80" alt="logo" />
+    <img :src="logo" height="80" alt="logo" />
 
     <h2 class="text-h5 mb-8 text-grey-darken-1 text-center">✨ 免费, 开源, 无广告 ✨</h2>
 
@@ -27,7 +27,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import highQA from '../assets/high-qa.png';
+import logo from '../assets/android-chrome-192x192.png';
 
 const commands = ref([
   { text: '粘贴内容', buttons: ['⌘', 'V'] },

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from "vue";
 import { useDisplay } from "vuetify";
 import PairedDevices from "../components/Device/PairedDevices.vue";
-import highQA from "../assets/high-qa.png";
+import logo from "../assets/android-chrome-192x192.png";
 import DeviceShell from "../components/Device/DeviceShell.vue";
 import DeviceLogcat from "../components/Device/DeviceLogcat.vue";
 import DeviceInfo from "../components/Device/DeviceInfo.vue";
@@ -18,7 +18,6 @@ const { width } = useDisplay();
 const showRightPanel = computed(() => width.value >= 960);
 
 const containerSize = ref({ width: 0, height: 0 });
-const highQAImage = ref(highQA);
 const userSetLeftPanelWidth = ref(560);
 const leftPanelWidth = computed(() => {
   if (!showRightPanel.value) {
@@ -201,7 +200,7 @@ const showDeviceDrawer = ref(false);
     <v-app-bar height="64" color="white" app>
       <v-container class="d-flex align-center justify-center pa-0" fluid>
         <v-img
-          :src="highQAImage"
+          :src="logo"
           max-width="110"
           max-height="24"
           class="mr-6 ml-10"
@@ -211,7 +210,7 @@ const showDeviceDrawer = ref(false);
           @update-connection-status="handleConnectionStatus"
         />
         <v-spacer />
-        
+
         <div class="d-flex align-center">
           <div class="d-flex align-center mx-2">
             <v-btn
@@ -225,7 +224,7 @@ const showDeviceDrawer = ref(false);
             </v-btn>
             <GitHubStats />
           </div>
-          
+
           <v-btn
             icon
             class="mx-1"
@@ -245,7 +244,7 @@ const showDeviceDrawer = ref(false);
               />
             </svg>
           </v-btn>
-          
+
           <v-btn
             variant="text"
             class="text-none"
@@ -273,8 +272,8 @@ const showDeviceDrawer = ref(false);
                 ref="DeviceContainerRef"
                 class="device-container"
               >
-                <div 
-                  ref="videoWrapperRef" 
+                <div
+                  ref="videoWrapperRef"
                   class="video-wrapper"
                   :style="{
                     width: `${containerDimensions.width}px`,
@@ -386,7 +385,7 @@ const showDeviceDrawer = ref(false);
   text-align: center;
   font-size: 16px;
   font-weight: 500;
-  
+
   .connection-status {
     margin-bottom: 16px;
     min-height: 60px;
@@ -517,7 +516,7 @@ const showDeviceDrawer = ref(false);
 .device-drawer {
   max-height: 80vh;
   border-radius: 0 0 16px 16px;
-  
+
   :deep(.v-navigation-drawer__content) {
     border-radius: 0 0 16px 16px;
     overflow: hidden;
