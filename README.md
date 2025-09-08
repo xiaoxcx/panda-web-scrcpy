@@ -31,6 +31,5 @@ panda-web-scrcpy 继承了scrcpy的优点，提供了高性能、低延迟的屏
 ## 许可证信息
 本项目使用 [MIT 许可证](LICENSE)。
 
-## 联系作者
-hanxd3011@gmail.com
-
+## 🙏致谢
+ Tango ADB 
