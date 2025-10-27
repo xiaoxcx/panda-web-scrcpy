@@ -1,5 +1,12 @@
 <script setup>
+// 从App.vue移动过来的数据
 import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from "vue";
+
+const roomName = ref('default-room');
+const currentUser = ref({
+  id: 'default-user',
+  name: 'Default User',
+});
 import { useDisplay } from "vuetify";
 import PairedDevices from "../components/Device/PairedDevices.vue";
 import logo from "../assets/android-chrome-192x192.png";
@@ -54,6 +61,7 @@ const handleConnectionStatus = async (status) => {
   if (status) {
     await ensureContainerSize();
   }
+  console.log('status :', status);
   connected.value = status;
   if (!status) {
     handleDisconnected();
