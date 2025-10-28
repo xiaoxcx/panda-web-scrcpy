@@ -104,15 +104,15 @@ const videoWrapperRef = ref(null);
 
 // 计算容器的实际可用空间
 const containerDimensions = computed(() => {
-  const horizontalPadding = 20;
-  const verticalPadding = 30;
+  const horizontalPadding = 0;
+  const verticalPadding = 0;
   const navBarWidth = 80;
   const borderWidth = 6; // 考虑边框宽度
 
   return {
     width:
       leftPanelWidth.value - (navBarWidth + horizontalPadding + borderWidth),
-    height: containerSize.value.height - (verticalPadding * 2 + borderWidth),
+    height: containerSize.value.height,
   };
 });
 
@@ -244,7 +244,7 @@ const handleInstallComplete = (success, message) => {
       >
         <div class="left-panel" :style="{ width: leftPanelWidth + 'px' }">
           <v-card class="panel-content">
-            <v-card-text class="d-flex align-center justify-center">
+            <!-- <v-card-text class="d-flex align-center justify-center"> -->
               <div
                 v-if="connected"
                 ref="DeviceContainerRef"
@@ -300,7 +300,7 @@ const handleInstallComplete = (success, message) => {
                   </div>
                 </div>
               </div>
-            </v-card-text>
+            <!-- </v-card-text> -->
           </v-card>
         </div>
       </div>
@@ -376,7 +376,8 @@ const handleInstallComplete = (success, message) => {
     // min-width: 200px;
     // max-width: 100%;
     // overflow: hidden;
-    // margin: 16px;
+    
+    // margin: 16px 0px;
 
     .panel-content {
       display: flex;
@@ -384,7 +385,7 @@ const handleInstallComplete = (success, message) => {
       align-items: center;
       justify-content: center;
       height: 100%;
-      padding: 16px;
+      margin-top: 16px;
     }
   }
 
