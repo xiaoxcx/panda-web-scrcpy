@@ -207,62 +207,11 @@ const showDeviceDrawer = ref(false);
   <v-app>
     <v-app-bar height="64" color="white" app>
       <v-container class="d-flex align-center justify-center pa-0" fluid>
-          <v-img
-          :src="logo"
-          max-width="24"
-          max-height="24"
-          class="mr-1 ml-10"
-        />
         <PairedDevices
           @pair-device="onPairDevice"
           @update-connection-status="handleConnectionStatus"
         />
         <v-spacer />
-
-        <div class="d-flex align-center">
-          <div class="d-flex align-center mx-2">
-            <v-btn
-              icon
-              class="mr-2"
-              href="https://pandatestgrid.github.io/panda-web-scrcpy/"
-              target="_blank"
-              title="GitHub"
-            >
-              <v-icon>mdi-github</v-icon>
-            </v-btn>
-            <GitHubStats />
-          </div>
-
-          <v-btn
-            icon
-            class="mx-1"
-            href="https://discord.gg/yourdiscord"
-            target="_blank"
-            title="Discord"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              class="discord-icon"
-            >
-              <path
-                fill="currentColor"
-                d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z"
-              />
-            </svg>
-          </v-btn>
-
-          <v-btn
-            variant="text"
-            class="text-none"
-            style="height: 64px"
-            href="https://maxwellos.github.io/"
-            target="_blank"
-          >
-            社区
-          </v-btn>
-        </div>
       </v-container>
     </v-app-bar>
 
@@ -333,50 +282,8 @@ const showDeviceDrawer = ref(false);
             </v-card-text>
           </v-card>
         </div>
-        <div
-          v-if="showRightPanel"
-          class="resizer"
-          @mousedown="startResize"
-          @touchstart="startResize"
-        />
-        <div
-          v-if="showRightPanel"
-          class="right-panel"
-          :style="{ width: rightPanelWidth + 'px' }"
-        >
-          <v-card height="100%">
-            <template v-if="connected">
-              <v-tabs v-model="tab" color="primary" align-tabs="center" grow>
-                <v-tab
-                  v-for="(item, index) in tabs"
-                  :key="index"
-                  :value="index"
-                >
-                  <v-icon start>{{ item.icon }}</v-icon>
-                  {{ item.title }}
-                </v-tab>
-              </v-tabs>
-              <v-window v-model="tab" class="right-panel-content">
-                <v-window-item
-                  v-for="(item, index) in tabs"
-                  :key="index"
-                  :value="index"
-                >
-                  <v-card flat>
-                    <component :is="item.component" :device-meta="deviceMeta" />
-                  </v-card>
-                </v-window-item>
-              </v-window>
-            </template>
-            <template v-else>
-              <AbstractList />
-            </template>
-          </v-card>
-        </div>
       </div>
     </v-main>
-
-    <DeviceSelectDrawer v-model="showDeviceDrawer" />
   </v-app>
 </template>
 

@@ -1,87 +1,338 @@
-<template>
-  <div class="device-view2">
-    <!-- 顶部工具栏 -->
-    <div class="app-bar">
-      <div class="app-bar-content">
-        <div class="logo-section">
-          <img src="../assets/android-chrome-192x192.png" alt="Logo" class="logo" />
-          <PairedDevices
-            @pair-device="onPairDevice"
-            @update-connection-status="handleConnectionStatus"
-          />
-        </div>
-        
-        <div class="spacer"></div>
-        
-        <div class="actions-section">
-          <a href="https://pandatestgrid.github.io/panda-web-scrcpy/" target="_blank" class="action-btn" title="GitHub">
-            <span class="icon">📱</span>
-          </a>
-          <a href="https://discord.gg/yourdiscord" target="_blank" class="action-btn" title="Discord">
-            <span class="icon">💬</span>
-          </a>
-          <a href="https://maxwellos.github.io/" target="_blank" class="community-btn">
-            社区
-          </a>
-        </div>
-      </div>
-    </div>
+<script setup>
+// 从App.vue移动过来的数据
+import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from "vue";
 
-    <!-- 主内容区域 -->
-    <div class="main-content">
+const roomName = ref('default-room');
+const currentUser = ref({
+  id: 'default-user',
+  name: 'Default User',
+});
+import { useDisplay } from "vuetify";
+import PairedDevices from "../components/Device/PairedDevices.vue";
+import logo from "../assets/android-chrome-192x192.png";
+import DeviceShell from "../components/Device/DeviceShell.vue";
+import DeviceLogcat from "../components/Device/DeviceLogcat.vue";
+import DeviceInfo from "../components/Device/DeviceInfo.vue";
+import AbstractList from "./AbstractList.vue";
+import VideoContainer from "../components/Device/VideoContainer.vue";
+import NavigationBar from "../components/Device/NavigationBar.vue";
+import state from "../components/Scrcpy/scrcpy-state";
+import AppManager from "../components/Device/AppManager.vue";
+import DeviceSelectDrawer from '../components/Device/DeviceSelectDrawer.vue'
+import GitHubStats from '../components/Common/GitHubStats.vue'
+
+const { width } = useDisplay();
+const showRightPanel = computed(() => width.value >= 960);
+
+const containerSize = ref({ width: 0, height: 0 });
+const userSetLeftPanelWidth = ref(560);
+const leftPanelWidth = computed(() => {
+  if (!showRightPanel.value) {
+    return width.value;
+  }
+  return userSetLeftPanelWidth.value;
+});
+
+const rightPanelWidth = computed(() =>
+  Math.max(300, containerSize.value.width - leftPanelWidth.value - 16)
+);
+const isResizing = ref(false);
+const startX = ref(0);
+const startWidth = ref(0);
+
+const deviceMeta = shallowRef(undefined);
+const connected = ref(false);
+const tab = ref(0);
+
+const isHorizontalLayout = computed(() => {
+  return containerSize.value.width > leftPanelWidth.value + 200;
+});
+
+const handleDisconnected = () => {
+  connected.value = false;
+  deviceMeta.value = undefined;
+};
+
+const onPairDevice = (device) => {
+  deviceMeta.value = device;
+};
+
+const handleConnectionStatus = async (status) => {
+  if (status) {
+    await ensureContainerSize();
+  }
+  console.log('status :', status);
+  connected.value = status;
+  if (!status) {
+    handleDisconnected();
+  }
+};
+
+const startResize = (e) => {
+  if (!showRightPanel.value) return;
+  isResizing.value = true;
+  startX.value = e.clientX || e.touches[0].clientX;
+  startWidth.value = userSetLeftPanelWidth.value;
+  document.addEventListener("mousemove", resize);
+  document.addEventListener("touchmove", resize);
+  document.addEventListener("mouseup", stopResize);
+  document.addEventListener("touchend", stopResize);
+};
+
+const resize = (e) => {
+  if (!isResizing.value) return;
+  const clientX = e.clientX || e.touches[0]?.clientX;
+  const diff = clientX - startX.value;
+  userSetLeftPanelWidth.value = Math.max(
+    300,
+    Math.min(startWidth.value + diff, containerSize.value.width - 300)
+  );
+};
+
+const stopResize = () => {
+  isResizing.value = false;
+  document.removeEventListener("mousemove", resize);
+  document.removeEventListener("touchmove", resize);
+  document.removeEventListener("mouseup", stopResize);
+  document.removeEventListener("touchend", stopResize);
+};
+
+const containerRef = ref(null);
+const DeviceContainerRef = ref(null);
+const videoWrapperRef = ref(null);
+
+// 计算容器的实际可用空间
+const containerDimensions = computed(() => {
+  const horizontalPadding = 20;
+  const verticalPadding = 30;
+  const navBarWidth = 80;
+  const borderWidth = 6; // 考虑边框宽度
+
+  return {
+    width:
+      leftPanelWidth.value - (navBarWidth + horizontalPadding + borderWidth),
+    height: containerSize.value.height - (verticalPadding * 2 + borderWidth),
+  };
+});
+
+// 监听容器尺寸变化
+watch(
+  () => containerDimensions.value,
+  (newDimensions) => {
+    if (videoWrapperRef.value) {
+      // 更新视频包装器的尺寸
+      videoWrapperRef.value.style.width = `${newDimensions.width}px`;
+      videoWrapperRef.value.style.height = `${newDimensions.height}px`;
+      // 通知 state 更新视频容器
+      state.updateVideoContainer();
+    }
+  },
+  { immediate: true }
+);
+
+// 修改 updateContainerSize 方法
+const updateContainerSize = () => {
+  if (containerRef.value) {
+    const rect = containerRef.value.getBoundingClientRect();
+    containerSize.value = {
+      width: rect.width,
+      height: rect.height,
+    };
+    // 强制设置视频包装器的初始尺寸
+    if (videoWrapperRef.value) {
+      videoWrapperRef.value.style.width = `${containerDimensions.value.width}px`;
+      videoWrapperRef.value.style.height = `${containerDimensions.value.height}px`;
+      // 通知 state 更新视频容器
+      if (state.running) {
+        state.updateVideoContainer();
+      }
+    }
+  }
+};
+
+// 添加一个方法来确保容器尺寸已准备好
+const ensureContainerSize = () => {
+  return new Promise(resolve => {
+    const checkSize = () => {
+      updateContainerSize();
+      if (containerSize.value.width > 0 && containerSize.value.height > 0) {
+        resolve();
+      } else {
+        requestAnimationFrame(checkSize);
+      }
+    };
+    checkSize();
+  });
+};
+
+onMounted(async () => {
+  // 确保容器尺寸已准备好
+  await ensureContainerSize();
+  window.addEventListener('resize', updateContainerSize);
+});
+
+onUnmounted(() => {
+  stopResize();
+  window.removeEventListener("resize", updateContainerSize);
+});
+
+watch(
+  () => document.fullscreenElement,
+  (newValue) => {
+    if (!newValue) {
+      setTimeout(updateContainerSize, 100);
+    }
+  }
+);
+
+watch(width, (newWidth, oldWidth) => {
+  if (newWidth < 960 && oldWidth >= 960) {
+    userSetLeftPanelWidth.value = newWidth;
+  } else if (newWidth >= 960 && oldWidth < 960) {
+    userSetLeftPanelWidth.value = 450;
+  }
+});
+
+const tabs = [
+  { title: "基础信息", icon: "mdi-android", component: DeviceInfo },
+  { title: "应用管理", icon: "mdi-android", component: AppManager },
+  { title: "终端", icon: "mdi-console", component: DeviceShell },
+  { title: "Logcat", icon: "mdi-android", component: DeviceLogcat },
+];
+
+const showDeviceDrawer = ref(false);
+</script>
+
+<template>
+  <v-app>
+    <v-app-bar height="64" color="white" app>
+      <v-container class="d-flex align-center justify-center pa-0" fluid>
+          <v-img
+          :src="logo"
+          max-width="24"
+          max-height="24"
+          class="mr-1 ml-10"
+        />
+        <PairedDevices
+          @pair-device="onPairDevice"
+          @update-connection-status="handleConnectionStatus"
+        />
+        <v-spacer />
+
+        <div class="d-flex align-center">
+          <div class="d-flex align-center mx-2">
+            <v-btn
+              icon
+              class="mr-2"
+              href="https://pandatestgrid.github.io/panda-web-scrcpy/"
+              target="_blank"
+              title="GitHub"
+            >
+              <v-icon>mdi-github</v-icon>
+            </v-btn>
+            <GitHubStats />
+          </div>
+
+          <v-btn
+            icon
+            class="mx-1"
+            href="https://discord.gg/yourdiscord"
+            target="_blank"
+            title="Discord"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              class="discord-icon"
+            >
+              <path
+                fill="currentColor"
+                d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z"
+              />
+            </svg>
+          </v-btn>
+
+          <v-btn
+            variant="text"
+            class="text-none"
+            style="height: 64px"
+            href="https://maxwellos.github.io/"
+            target="_blank"
+          >
+            社区
+          </v-btn>
+        </div>
+      </v-container>
+    </v-app-bar>
+
+    <v-main>
       <div
         ref="containerRef"
         class="resizable-container"
         :class="{ 'horizontal-layout': isHorizontalLayout }"
       >
-        <!-- 左侧面板 -->
         <div class="left-panel" :style="{ width: leftPanelWidth + 'px' }">
-          <div class="panel-content">
-            <div v-if="connected" class="device-container">
+          <v-card class="panel-content">
+            <v-card-text class="d-flex align-center justify-center">
               <div
-                ref="videoWrapperRef"
-                class="video-wrapper"
-                :style="{
-                  width: `${containerDimensions.width}px`,
-                  height: `${containerDimensions.height}px`
-                }"
+                v-if="connected"
+                ref="DeviceContainerRef"
+                class="device-container"
               >
-                <VideoContainer />
-              </div>
-              <div class="navigation-wrapper">
-                <NavigationBar />
-              </div>
-            </div>
-            <div v-else class="connection-status-container">
-              <div
-                class="loading-indicator"
-                :style="{
-                  width: leftPanelWidth / 1.2 + 'px',
-                  height: containerSize.height / 1.2 + 'px',
-                }"
-              >
-                <div class="connection-status">
-                  <div v-if="scrcpyState.connecting" class="spinner"></div>
-                  <button
-                    v-else
-                    class="power-button"
-                    @click="showDeviceDrawer = true"
-                  >
-                    🔌
-                  </button>
+                <div
+                  ref="videoWrapperRef"
+                  class="video-wrapper"
+                  :style="{
+                    width: `${containerDimensions.width}px`,
+                    height: `${containerDimensions.height}px`
+                  }"
+                >
+                  <VideoContainer />
                 </div>
-                <div class="status-text">
-                  {{ scrcpyState.connecting ? '正在连接设备...' : '连接设备' }}
-                </div>
-                <div class="hint-text">
-                  {{ scrcpyState.connecting ? '请稍候...' : '请确保设备已开启USB调试模式' }}
+                <div class="navigation-wrapper">
+                  <NavigationBar />
                 </div>
               </div>
-            </div>
-          </div>
+              <div v-else class="d-flex align-center justify-center">
+                <div
+                  class="loading-indicator"
+                  :style="{
+                    width: leftPanelWidth / 1.2 + 'px',
+                    height: containerSize.height / 1.2 + 'px',
+                  }"
+                >
+                  <div class="connection-status">
+                    <v-progress-circular
+                      v-if="state.connecting"
+                      indeterminate
+                      color="primary"
+                      size="60"
+                      width="4"
+                    />
+                    <v-btn
+                      v-else
+                      icon
+                      x-large
+                      size="60"
+                      color="black"
+                      class="power-button mb-2"
+                      @click="showDeviceDrawer = true"
+                    >
+                      <v-icon x-large>mdi-power</v-icon>
+                    </v-btn>
+                  </div>
+                  <div class="text-h6">
+                    {{ state.connecting ? '正在连接设备...' : '连接设备' }}
+                  </div>
+                  <div class="text-body-2">
+                    {{ state.connecting ? '请稍候...' : '请确保设备已开启USB调试模式' }}
+                  </div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
         </div>
-
-        <!-- 右侧面板 -->
         <div
           v-if="showRightPanel"
           class="resizer"
@@ -93,310 +344,73 @@
           class="right-panel"
           :style="{ width: rightPanelWidth + 'px' }"
         >
-          <div class="panel-content">
-            <div v-if="connected" class="tab-container">
-              <div class="tabs">
-                <button
+          <v-card height="100%">
+            <template v-if="connected">
+              <v-tabs v-model="tab" color="primary" align-tabs="center" grow>
+                <v-tab
                   v-for="(item, index) in tabs"
                   :key="index"
-                  :class="{ active: tab === index }"
-                  @click="tab = index"
+                  :value="index"
                 >
+                  <v-icon start>{{ item.icon }}</v-icon>
                   {{ item.title }}
-                </button>
-              </div>
-              <div class="tab-content">
-                <component :is="item.component" :device-meta="deviceMeta" />
-              </div>
-            </div>
-            <div v-else>
+                </v-tab>
+              </v-tabs>
+              <v-window v-model="tab" class="right-panel-content">
+                <v-window-item
+                  v-for="(item, index) in tabs"
+                  :key="index"
+                  :value="index"
+                >
+                  <v-card flat>
+                    <component :is="item.component" :device-meta="deviceMeta" />
+                  </v-card>
+                </v-window-item>
+              </v-window>
+            </template>
+            <template v-else>
               <AbstractList />
-            </div>
-          </div>
+            </template>
+          </v-card>
         </div>
       </div>
-    </div>
+    </v-main>
 
     <DeviceSelectDrawer v-model="showDeviceDrawer" />
-  </div>
+  </v-app>
 </template>
 
-<script>
-import PairedDevices from "../components/Device2/PairedDevices.vue";
-import logo from "../assets/android-chrome-192x192.png";
-import DeviceShell from "../components/Device2/DeviceShell.vue";
-import DeviceLogcat from "../components/Device2/DeviceLogcat.vue";
-import DeviceInfo from "../components/Device2/DeviceInfo.vue";
-import AbstractList from "./AbstractList.vue";
-import VideoContainer from "../components/Device2/VideoContainer.vue";
-import NavigationBar from "../components/Device2/NavigationBar.vue";
-import state from "../components/Scrcpy/scrcpy-state";
-import AppManager from "../components/Device2/AppManager.vue";
-import DeviceSelectDrawer from '../components/Device2/DeviceSelectDrawer.vue'
-import GitHubStats from '../components/Common/GitHubStats.vue'
-
-export default {
-  name: 'DeviceView2',
-  components: {
-    PairedDevices,
-    DeviceShell,
-    DeviceLogcat,
-    DeviceInfo,
-    AbstractList,
-    VideoContainer,
-    NavigationBar,
-    AppManager,
-    DeviceSelectDrawer,
-    GitHubStats
-  },
-  data() {
-    return {
-      logo,
-      roomName: 'default-room',
-      currentUser: {
-        id: 'default-user',
-        name: 'Default User',
-      },
-      containerSize: { width: 0, height: 0 },
-      userSetLeftPanelWidth: 560,
-      isResizing: false,
-      width: 200,
-      startX: 0,
-      startWidth: 0,
-      deviceMeta: undefined,
-      connected: false,
-      tab: 0,
-      containerRef: null,
-      DeviceContainerRef: null,
-      videoWrapperRef: null,
-      showDeviceDrawer: false,
-      scrcpyState: state,
-      tabs: [
-        { title: "基础信息", icon: "mdi-android", component: DeviceInfo },
-        { title: "应用管理", icon: "mdi-android", component: AppManager },
-        { title: "终端", icon: "mdi-console", component: DeviceShell },
-        { title: "Logcat", icon: "mdi-android", component: DeviceLogcat },
-      ]
-    };
-  },
-  computed: {
-    showRightPanel() {
-      return this.width >= 960;
-    },
-    leftPanelWidth() {
-      if (!this.showRightPanel) {
-        return this.width;
-      }
-      return this.userSetLeftPanelWidth;
-    },
-    rightPanelWidth() {
-      return Math.max(300, this.containerSize.width - this.leftPanelWidth - 16);
-    },
-    isHorizontalLayout() {
-      return this.containerSize.width > this.leftPanelWidth + 200;
-    },
-    containerDimensions() {
-      const horizontalPadding = 20;
-      const verticalPadding = 30;
-      const navBarWidth = 80;
-      const borderWidth = 6; // 考虑边框宽度
-
-      return {
-        width: this.leftPanelWidth - (navBarWidth + horizontalPadding + borderWidth),
-        height: this.containerSize.height - (verticalPadding * 2 + borderWidth),
-      };
-    }
-  },
-  watch: {
-    containerDimensions: {
-      handler(newDimensions) {
-        if (this.videoWrapperRef) {
-          // 更新视频包装器的尺寸
-          this.videoWrapperRef.style.width = `${newDimensions.width}px`;
-          this.videoWrapperRef.style.height = `${newDimensions.height}px`;
-          // 通知 state 更新视频容器
-          state.updateVideoContainer();
-        }
-      },
-      deep: true,
-      immediate: true
-    },
-    width(newWidth, oldWidth) {
-      if (newWidth < 960 && oldWidth >= 960) {
-        this.userSetLeftPanelWidth = newWidth;
-      } else if (newWidth >= 960 && oldWidth < 960) {
-        this.userSetLeftPanelWidth = 450;
-      }
-    }
-  },
-  mounted() {
-    // 确保容器尺寸已准备好
-    this.ensureContainerSize();
-    window.addEventListener('resize', this.updateContainerSize);
-    
-    // 监听全屏状态变化
-    document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
-        setTimeout(this.updateContainerSize, 100);
-      }
-    });
-  },
-  beforeDestroy() {
-    this.stopResize();
-    window.removeEventListener("resize", this.updateContainerSize);
-    document.removeEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
-        setTimeout(this.updateContainerSize, 100);
-      }
-    });
-  },
-  methods: {
-    handleDisconnected() {
-      this.connected = false;
-      this.deviceMeta = undefined;
-    },
-    async onPairDevice(device) {
-      console.log('device :', device);
-      this.deviceMeta = device;
-
-    },
-    async handleConnectionStatus(status) {
-      console.log('status :', status);
-      if (status) {
-        await this.ensureContainerSize();
-      }
-      console.log('status :', status);
-      this.connected = status;
-      if (!status) {
-        this.handleDisconnected();
-      }
-    },
-    startResize(e) {
-      if (!this.showRightPanel) return;
-      this.isResizing = true;
-      this.startX = e.clientX || e.touches[0].clientX;
-      this.startWidth = this.userSetLeftPanelWidth;
-      document.addEventListener("mousemove", this.resize);
-      document.addEventListener("touchmove", this.resize);
-      document.addEventListener("mouseup", this.stopResize);
-      document.addEventListener("touchend", this.stopResize);
-    },
-    resize(e) {
-      if (!this.isResizing) return;
-      const clientX = e.clientX || e.touches[0]?.clientX;
-      const diff = clientX - this.startX;
-      this.userSetLeftPanelWidth = Math.max(
-        300,
-        Math.min(this.startWidth + diff, this.containerSize.width - 300)
-      );
-    },
-    stopResize() {
-      this.isResizing = false;
-      document.removeEventListener("mousemove", this.resize);
-      document.removeEventListener("touchmove", this.resize);
-      document.removeEventListener("mouseup", this.stopResize);
-      document.removeEventListener("touchend", this.stopResize);
-    },
-    // 修改 updateContainerSize 方法
-    updateContainerSize() {
-      if (this.containerRef) {
-        const rect = this.containerRef.getBoundingClientRect();
-        this.containerSize = {
-          width: rect.width,
-          height: rect.height,
-        };
-        // 强制设置视频包装器的初始尺寸
-        if (this.videoWrapperRef) {
-          this.videoWrapperRef.style.width = `${this.containerDimensions.width}px`;
-          this.videoWrapperRef.style.height = `${this.containerDimensions.height}px`;
-          // 通知 state 更新视频容器
-          if (this.scrcpyState.running) {
-            state.updateVideoContainer();
-          }
-        }
-      }
-    },
-    // 添加一个方法来确保容器尺寸已准备好
-    ensureContainerSize() {
-      return new Promise(resolve => {
-        const checkSize = () => {
-          this.updateContainerSize();
-          if (this.containerSize.width > 0 && this.containerSize.height > 0) {
-            resolve();
-          } else {
-            requestAnimationFrame(checkSize);
-          }
-        };
-        checkSize();
-      });
-    }
-  }
-};
-</script>
-
 <style lang="scss" scoped>
-.device-view2 {
-  height: 100vh;
+.loading-indicator {
   display: flex;
   flex-direction: column;
-}
-
-.app-bar {
-  height: 64px;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
   align-items: center;
-  padding: 0 16px;
-}
-
-.app-bar-content {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.logo-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.logo {
-  width: 24px;
-  height: 24px;
-}
-
-.spacer {
-  flex: 1;
-}
-
-.actions-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.action-btn, .community-btn {
-  padding: 8px 12px;
-  text-decoration: none;
-  color: #1976d2;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  transition: all 0.3s;
-}
-
-.action-btn:hover, .community-btn:hover {
-  background: #f5f5f5;
-}
-
-.icon {
+  justify-content: center;
+  background: linear-gradient(#e9ecf1, #deeefa);
+  border-radius: 16px;
+  border: 3px solid black;
+  padding: 16px;
+  text-align: center;
   font-size: 16px;
-}
+  font-weight: 500;
 
-.main-content {
-  flex: 1;
-  overflow: hidden;
+  .connection-status {
+    margin-bottom: 16px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .text-h6 {
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .text-body-2 {
+    color: rgba(0, 0, 0, 0.6);
+    transition: all 0.3s ease;
+  }
 }
 
 .resizable-container {
@@ -407,26 +421,67 @@ export default {
   &.horizontal-layout {
     flex-direction: row;
   }
+
+  .left-panel {
+    min-width: 200px;
+    max-width: 100%;
+    overflow: hidden;
+    margin: 16px;
+
+    .panel-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 16px;
+    }
+  }
+
+  .right-panel {
+    flex-grow: 1;
+    min-width: 300px;
+    margin: 16px 16px 16px 8px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .right-panel-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .resizer {
+    width: 8px;
+    background-color: #e0e0e0;
+    cursor: col-resize;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #bdbdbd;
+    }
+  }
 }
 
-.left-panel {
-  min-width: 200px;
-  max-width: 100%;
-  overflow: hidden;
-  margin: 16px;
-  background: #f5f5f5;
-}
-
-.panel-content {
-  background: white;
-  border-radius: 8px;
-  padding: 16px;
+.v-window-item {
   height: 100%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  overflow-y: auto;
+}
+
+@media (max-width: 959px) {
+  .resizable-container {
+    flex-direction: column;
+
+    .left-panel {
+      max-width: 100%;
+      margin: 16px;
+    }
+
+    .resizer {
+      display: none;
+    }
+  }
 }
 
 .device-container {
@@ -446,10 +501,11 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: black;
-  border-radius: 8px;
-  overflow: hidden;
+  background: transparent;
+  border-radius: 16px;
+  overflow: visible;
   box-sizing: border-box;
+  transition: none !important;
 }
 
 .navigation-wrapper {
@@ -461,146 +517,22 @@ export default {
   background: transparent;
 }
 
-.connection-status-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
+.device-container.hidden {
+  display: none;
 }
 
-.loading-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(#e9ecf1, #deeefa);
-  border-radius: 16px;
-  border: 3px solid black;
-  padding: 16px;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 500;
-}
+.device-drawer {
+  max-height: 80vh;
+  border-radius: 0 0 16px 16px;
 
-.connection-status {
-  margin-bottom: 16px;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.spinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid #1976d2;
-  border-top: 4px solid transparent;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.power-button {
-  width: 60px;
-  height: 60px;
-  border: none;
-  background: black;
-  color: white;
-  border-radius: 50%;
-  font-size: 24px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.power-button:hover {
-  background: #333;
-}
-
-.status-text {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.hint-text {
-  font-size: 14px;
-  color: #666;
-}
-
-.resizer {
-  width: 8px;
-  background: #e0e0e0;
-  cursor: col-resize;
-  transition: background 0.3s;
-
-  &:hover {
-    background: #1976d2;
+  :deep(.v-navigation-drawer__content) {
+    border-radius: 0 0 16px 16px;
+    overflow: hidden;
   }
 }
 
-.right-panel {
-  flex-grow: 1;
-  min-width: 300px;
-  margin: 16px 16px 16px 8px;
-  display: flex;
-  flex-direction: column;
-  background: #f5f5f5;
-}
-
-.tab-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.tabs {
-  display: flex;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 16px;
-}
-
-.tabs button {
-  flex: 1;
-  padding: 12px 16px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.3s;
-}
-
-.tabs button.active {
-  border-bottom-color: #1976d2;
-  color: #1976d2;
-  font-weight: 600;
-}
-
-.tabs button:hover {
-  background: #f5f5f5;
-}
-
-.tab-content {
-  flex: 1;
-  overflow: auto;
-  padding: 16px;
-}
-
-@media (max-width: 960px) {
-  .resizable-container {
-    flex-direction: column;
-
-    .left-panel {
-      max-width: 100%;
-      margin: 16px;
-    }
-
-    .resizer {
-      display: none;
-    }
-  }
+.discord-icon {
+  width: 24px;
+  height: 24px;
 }
 </style>
