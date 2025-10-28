@@ -243,7 +243,7 @@ const handleAddDevice = async () => {
                         <v-icon>mdi-plus</v-icon>
                         <v-tooltip activator="parent" location="bottom">配对设备</v-tooltip>
                     </v-btn>
-                    <DeviceGuide />
+                    <!-- <DeviceGuide /> -->
                 </v-card-title>
                 <v-card-text v-if="errorMessage" class="error-container">
                     <v-alert type="error" prominent>

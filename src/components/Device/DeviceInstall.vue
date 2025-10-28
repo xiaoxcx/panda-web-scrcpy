@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+
+const emit = defineEmits<{
+  'install-complete': [success: boolean, message: string]
+}>();
 import { PackageManager, type PackageManagerInstallOptions } from '@yume-chan/android-bin';
 import { createFileStream, WrapConsumableStream, ProgressStream } from '../Scrcpy/file';
 import client from '../Scrcpy/adb-client';
@@ -77,6 +81,11 @@ const install = async () => {
                             (uploaded === file.value!.size ? 1 : 0.8);
                         progress.value.stage =
                             uploaded === file.value!.size ? Stage.Installing : Stage.Uploading;
+                        
+                        // 上传完成时触发关闭弹窗事件
+                        if (uploaded === file.value!.size) {
+                            emit('install-complete', true, '上传成功');
+                        }
                     }
                 })
             );
@@ -87,7 +96,7 @@ const install = async () => {
         const elapsed = Date.now() - start;
         const transferRate = (file.value.size / (elapsed / 1000) / 1024 / 1024).toFixed(2);
         log.value = `安装完成\n耗时: ${elapsed}毫秒\n传输速率: ${transferRate}MB/秒\n${installResult || ''}`;
-
+        
         progress.value = {
             filename: file.value.name,
             stage: Stage.Completed,
@@ -100,6 +109,8 @@ const install = async () => {
         if (progress.value) {
             progress.value.stage = Stage.Error;
         }
+        // 安装失败，触发关闭弹窗事件
+        emit('install-complete', false, error.message);
     } finally {
         installing.value = false;
     }
@@ -144,7 +155,7 @@ const formatFileSize = (size: number) => {
                 <v-card-text v-if="file" class="text-body-2 mb-4">
                     文件大小: {{ formatFileSize(file.size) }}
                 </v-card-text>
-
+<!-- 
                 <v-row class="mb-4">
                     <v-col cols="12" sm="6">
                         <v-checkbox v-model="options.allowTest" label="允许测试包" density="compact" hide-details />
@@ -154,7 +165,7 @@ const formatFileSize = (size: number) => {
                         <v-checkbox v-model="options.requestDowngrade" label="允许降级安装" density="compact" hide-details />
                         <v-checkbox v-model="options.grantRuntimePermissions" label="授予所有运行时权限" density="compact" hide-details />
                     </v-col>
-                </v-row>
+                </v-row> -->
 
                 <v-btn
                     color="primary"

@@ -56,29 +56,34 @@ const buttons = ref([
         onClick: () => recording(),
         isActive: computed(() => isRecording.value),
     },
+    // {
+    //     icon: computed(() => (isFullscreen.value ? 'mdi-fullscreen-exit' : 'mdi-fullscreen')),
+    //     label: '全屏',
+    //     onClick: () => toggleFullScreen(),
+    // },
+    // {
+    //     icon: computed(() => (isScreenOn.value ? 'mdi-eye-outline' : 'mdi-eye-closed')),
+    //     label: '隐私模式',
+    //     onClick: () => toggleScreen(),
+    // },
+    // { icon: 'mdi-screen-rotation', label: '旋转', size: '18', onClick: () => rotateDevice() },
+    // {
+    //     icon: 'mdi-bell-cog-outline',
+    //     label: '通知栏',
+    //     onClick: () => notificationPanel(),
+    // },
+    // { icon: 'mdi-volume-plus', label: '音量 + ', onClick: () => volumeUp() },
+    // { icon: 'mdi-volume-minus', label: '音量 -', onClick: () => volumeDown() },
     {
-        icon: computed(() => (isFullscreen.value ? 'mdi-fullscreen-exit' : 'mdi-fullscreen')),
-        label: '全屏',
-        onClick: () => toggleFullScreen(),
+        icon: 'mdi-package-variant',
+        label: '安装应用',
+        onClick: () => installApp(),
     },
-    {
-        icon: computed(() => (isScreenOn.value ? 'mdi-eye-outline' : 'mdi-eye-closed')),
-        label: '隐私模式',
-        onClick: () => toggleScreen(),
-    },
-    { icon: 'mdi-screen-rotation', label: '旋转', size: '18', onClick: () => rotateDevice() },
-    {
-        icon: 'mdi-bell-cog-outline',
-        label: '通知栏',
-        onClick: () => notificationPanel(),
-    },
-    { icon: 'mdi-volume-plus', label: '音量 + ', onClick: () => volumeUp() },
-    { icon: 'mdi-volume-minus', label: '音量 -', onClick: () => volumeDown() },
-    {
-        icon: 'mdi-power-standby',
-        label: '电源',
-        onClick: () => client.device.power.powerButton(),
-    },
+    // {
+    //     icon: 'mdi-power-standby',
+    //     label: '电源',
+    //     onClick: () => client.device.power.powerButton(),
+    // },
 ]);
 
 async function takeScreenshot() {
@@ -289,6 +294,13 @@ function handleAppSwitchPointerUp(e) {
         repeat: 0,
         metaState: 0,
     });
+}
+
+function installApp() {
+    state.fullScreenContainer.focus();
+    // 触发安装应用弹窗显示事件
+    const event = new CustomEvent('show-install-app-dialog');
+    window.dispatchEvent(event);
 }
 </script>
 

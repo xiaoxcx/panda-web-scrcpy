@@ -18,6 +18,7 @@ import VideoContainer from "../components/Device/VideoContainer.vue";
 import NavigationBar from "../components/Device/NavigationBar.vue";
 import state from "../components/Scrcpy/scrcpy-state";
 import AppManager from "../components/Device/AppManager.vue";
+import DeviceInstall from "../components/Device/DeviceInstall.vue";
 import DeviceSelectDrawer from '../components/Device/DeviceSelectDrawer.vue'
 import GitHubStats from '../components/Common/GitHubStats.vue'
 
@@ -201,6 +202,26 @@ const tabs = [
 ];
 
 const showDeviceDrawer = ref(false);
+const showInstallAppDialog = ref(false);
+
+// 监听安装应用弹窗显示事件
+const handleShowInstallAppDialog = () => {
+  showInstallAppDialog.value = true;
+};
+
+onMounted(() => {
+  window.addEventListener('show-install-app-dialog', handleShowInstallAppDialog);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('show-install-app-dialog', handleShowInstallAppDialog);
+});
+
+const handleInstallComplete = (success, message) => {
+  showInstallAppDialog.value = false;
+  // 这里可以添加安装完成后的处理逻辑
+  console.log('安装完成:', success, message);
+};
 </script>
 
 <template>
@@ -284,6 +305,28 @@ const showDeviceDrawer = ref(false);
         </div>
       </div>
     </v-main>
+
+    <!-- 安装应用弹窗 -->
+    <v-dialog v-model="showInstallAppDialog" max-width="800" persistent>
+      <v-card class="install-app-dialog">
+        <v-card-title class="d-flex justify-space-between align-center bg-primary-lighten-5">
+          <div class="d-flex align-center">
+            <v-icon start color="primary" class="mr-2">mdi-package-variant</v-icon>
+            <span class="text-h6">安装应用</span>
+          </div>
+          <v-btn
+            icon
+            variant="text"
+            @click="showInstallAppDialog = false"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text class="pa-0">
+          <DeviceInstall @install-complete="handleInstallComplete" />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -330,10 +373,10 @@ const showDeviceDrawer = ref(false);
   }
 
   .left-panel {
-    min-width: 200px;
-    max-width: 100%;
-    overflow: hidden;
-    margin: 16px;
+    // min-width: 200px;
+    // max-width: 100%;
+    // overflow: hidden;
+    // margin: 16px;
 
     .panel-content {
       display: flex;
@@ -376,28 +419,14 @@ const showDeviceDrawer = ref(false);
   overflow-y: auto;
 }
 
-@media (max-width: 959px) {
-  .resizable-container {
-    flex-direction: column;
-
-    .left-panel {
-      max-width: 100%;
-      margin: 16px;
-    }
-
-    .resizer {
-      display: none;
-    }
-  }
-}
 
 .device-container {
   display: flex;
   flex-direction: row;
   width: 100%;
   height: 100%;
-  padding: 30px 10px;
-  gap: 16px;
+  // padding: 30px 10px;
+  // gap: 16px;
   box-sizing: border-box;
   background: transparent;
 }
