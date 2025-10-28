@@ -8,17 +8,17 @@ const currentUser = ref({
   name: 'Default User',
 });
 import { useDisplay } from "vuetify";
-import PairedDevices from "../components/Device/PairedDevices.vue";
+import PairedDevices from "../components/Device2/PairedDevices.vue";
 import logo from "../assets/android-chrome-192x192.png";
-import DeviceShell from "../components/Device/DeviceShell.vue";
-import DeviceLogcat from "../components/Device/DeviceLogcat.vue";
-import DeviceInfo from "../components/Device/DeviceInfo.vue";
+import DeviceShell from "../components/Device2/DeviceShell.vue";
+import DeviceLogcat from "../components/Device2/DeviceLogcat.vue";
+import DeviceInfo from "../components/Device2/DeviceInfo.vue";
 import AbstractList from "./AbstractList.vue";
-import VideoContainer from "../components/Device/VideoContainer.vue";
-import NavigationBar from "../components/Device/NavigationBar.vue";
+import VideoContainer from "../components/Device2/VideoContainer.vue";
+import NavigationBar from "../components/Device2/NavigationBar.vue";
 import state from "../components/Scrcpy/scrcpy-state";
-import AppManager from "../components/Device/AppManager.vue";
-import DeviceSelectDrawer from '../components/Device/DeviceSelectDrawer.vue'
+import AppManager from "../components/Device2/AppManager.vue";
+import DeviceSelectDrawer from '../components/Device2/DeviceSelectDrawer.vue'
 import GitHubStats from '../components/Common/GitHubStats.vue'
 
 const { width } = useDisplay();
